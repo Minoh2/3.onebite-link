@@ -1,24 +1,22 @@
-import LinkCard from "./LinkCard";
-import { links } from "../lib/bookmarks";
+"use client";
 
-type LinkItem = {
-  title: string;
-  url: string;
-  description: string;
-  folder: string;
-};
+import LinkCard from "./LinkCard";
+import { useFolders } from "./FolderProvider";
+import type { Bookmark } from "../lib/bookmarks";
 
 type LinkGridProps = {
   eyebrow?: string;
   title?: string;
-  links?: LinkItem[];
+  links?: Bookmark[];
 };
 
 export default function LinkGrid({
   eyebrow = "Saved Links",
   title = "등록된 링크",
-  links: visibleLinks = links,
+  links: providedLinks,
 }: LinkGridProps) {
+  const { links } = useFolders();
+  const visibleLinks = providedLinks ?? links;
   return (
     <section className="min-w-0">
       <div className="mb-12 flex items-end justify-between gap-6 max-[520px]:items-start">
@@ -30,7 +28,7 @@ export default function LinkGrid({
       </div>
       <div className="grid grid-cols-2 gap-5 max-[620px]:grid-cols-1">
         {visibleLinks.map((link) => (
-          <LinkCard key={link.title} {...link} />
+          <LinkCard key={link.id} {...link} />
         ))}
       </div>
     </section>

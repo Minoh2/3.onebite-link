@@ -7,7 +7,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { folders as defaultFolders } from "../lib/bookmarks";
+import {
+  folders as defaultFolders,
+  links as defaultLinks,
+  type Bookmark,
+} from "../lib/bookmarks";
 
 type Folder = {
   id: string;
@@ -16,6 +20,8 @@ type Folder = {
 
 type FolderContextValue = {
   folders: Folder[];
+  links: Bookmark[];
+  addLink: (link: Bookmark) => void;
   addFolder: (name: string) => void;
   updateFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => void;
@@ -24,6 +30,7 @@ type FolderContextValue = {
 const FolderContext = createContext<FolderContextValue | null>(null);
 
 export function FolderProvider({ children }: { children: ReactNode }) {
+  const [savedLinks, setSavedLinks] = useState<Bookmark[]>([]);
   const [customFolders, setCustomFolders] = useState<Folder[]>([]);
   const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
   const [folderNameOverrides, setFolderNameOverrides] = useState<
@@ -40,6 +47,23 @@ export function FolderProvider({ children }: { children: ReactNode }) {
         })),
     [customFolders, deletedFolderIds, folderNameOverrides],
   );
+
+  const links = useMemo(
+    () =>
+      [...savedLinks, ...defaultLinks]
+        .filter((link) => folders.some((folder) => folder.id === link.folderId))
+        .map((link) => ({
+          ...link,
+          folder:
+            folders.find((folder) => folder.id === link.folderId)?.name ??
+            link.folder,
+        })),
+    [folders, savedLinks],
+  );
+
+  function addLink(link: Bookmark) {
+    setSavedLinks((currentLinks) => [link, ...currentLinks]);
+  }
 
   function addFolder(name: string) {
     const normalizedName = name.trim();
@@ -74,7 +98,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
 
   return (
     <FolderContext.Provider
-      value={{ folders, addFolder, updateFolder, deleteFolder }}
+      value={{ folders, links, addLink, addFolder, updateFolder, deleteFolder }}
     >
       {children}
     </FolderContext.Provider>

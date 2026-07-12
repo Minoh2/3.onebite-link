@@ -1,7 +1,7 @@
 import Header from "../../../components/Header";
 import FolderLinkGrid from "../../../components/FolderLinkGrid";
 import Sidebar from "../../../components/Sidebar";
-import { getFolder, getLinksByFolder } from "../../../lib/bookmarks";
+import { getFolder } from "../../../lib/bookmarks";
 
 type FolderPageProps = {
   params: Promise<{
@@ -12,7 +12,6 @@ type FolderPageProps = {
 export default async function FolderPage({ params }: FolderPageProps) {
   const { folderId } = await params;
   const folder = getFolder(folderId);
-  const folderLinks = getLinksByFolder(folderId);
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -22,7 +21,6 @@ export default async function FolderPage({ params }: FolderPageProps) {
         <FolderLinkGrid
           folderId={folderId}
           initialTitle={folder ? `${folder.name} 링크` : "폴더 링크"}
-          links={folderLinks}
         />
       </main>
     </div>
