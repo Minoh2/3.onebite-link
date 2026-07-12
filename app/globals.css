@@ -48,6 +48,8 @@ a {
 }
 
 .folder-row-hover,
+.folder-actions,
+.folder-edit-button,
 .folder-delete-button,
 .danger-button-hover {
   transition: background-color 300ms ease, color 300ms ease, opacity 300ms ease, width 300ms ease;
@@ -71,14 +73,22 @@ a {
   background: var(--surface-hover);
 }
 
-.folder-row-hover:hover .folder-delete-button,
-.folder-delete-button:focus-visible {
+.folder-row-hover:hover .folder-actions,
+.folder-actions:focus-within {
   opacity: 1;
-  width: 58px;
+  width: 64px;
+}
+
+.folder-edit-button:hover,
+.folder-delete-button:hover {
+  background: var(--divider);
+}
+
+.folder-edit-button:hover {
+  color: var(--accent);
 }
 
 .folder-delete-button:hover {
-  background: var(--divider);
   color: var(--error);
 }
 
@@ -105,6 +115,8 @@ a {
   }
 
   .folder-row-hover,
+  .folder-actions,
+  .folder-edit-button,
   .folder-delete-button,
   .danger-button-hover {
     transition: none;

@@ -17,6 +17,7 @@ type Folder = {
 type FolderContextValue = {
   folders: Folder[];
   addFolder: (name: string) => void;
+  updateFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => void;
 };
 
@@ -25,13 +26,19 @@ const FolderContext = createContext<FolderContextValue | null>(null);
 export function FolderProvider({ children }: { children: ReactNode }) {
   const [customFolders, setCustomFolders] = useState<Folder[]>([]);
   const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
+  const [folderNameOverrides, setFolderNameOverrides] = useState<
+    Record<string, string>
+  >({});
 
   const folders = useMemo(
     () =>
-      [...defaultFolders, ...customFolders].filter(
-        (folder) => !deletedFolderIds.includes(folder.id),
-      ),
-    [customFolders, deletedFolderIds],
+      [...defaultFolders, ...customFolders]
+        .filter((folder) => !deletedFolderIds.includes(folder.id))
+        .map((folder) => ({
+          ...folder,
+          name: folderNameOverrides[folder.id] ?? folder.name,
+        })),
+    [customFolders, deletedFolderIds, folderNameOverrides],
   );
 
   function addFolder(name: string) {
@@ -48,6 +55,16 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     setCustomFolders(nextFolders);
   }
 
+  function updateFolder(id: string, name: string) {
+    const normalizedName = name.trim();
+    if (!normalizedName) return;
+
+    setFolderNameOverrides((names) => ({
+      ...names,
+      [id]: normalizedName,
+    }));
+  }
+
   function deleteFolder(id: string) {
     setCustomFolders((folders) =>
       folders.filter((folder) => folder.id !== id),
@@ -56,7 +73,9 @@ export function FolderProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <FolderContext.Provider value={{ folders, addFolder, deleteFolder }}>
+    <FolderContext.Provider
+      value={{ folders, addFolder, updateFolder, deleteFolder }}
+    >
       {children}
     </FolderContext.Provider>
   );

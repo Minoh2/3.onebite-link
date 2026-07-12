@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import AddFolderButton from "./AddFolderButton";
 import { useFolders } from "./FolderProvider";
 
 export default function Sidebar() {
-  const { folders, deleteFolder } = useFolders();
+  const { folders, updateFolder, deleteFolder } = useFolders();
+  const [folderToEdit, setFolderToEdit] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [editedName, setEditedName] = useState("");
   const [folderToDelete, setFolderToDelete] = useState<{
     id: string;
     name: string;
@@ -23,6 +28,19 @@ export default function Sidebar() {
       router.push("/");
     }
     setFolderToDelete(null);
+  }
+
+  function openEditModal(folder: { id: string; name: string }) {
+    setFolderToEdit(folder);
+    setEditedName(folder.name);
+  }
+
+  function confirmEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!folderToEdit || !editedName.trim()) return;
+
+    updateFolder(folderToEdit.id, editedName);
+    setFolderToEdit(null);
   }
 
   return (
@@ -54,33 +72,73 @@ export default function Sidebar() {
             >
               {folder.name}
             </Link>
-            <button
-              aria-label={`${folder.name} 폴더 삭제`}
-              className="folder-delete-button flex h-8 w-0 shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full px-0 text-xs font-medium text-[var(--text-sub)] opacity-0 max-[800px]:w-[58px] max-[800px]:opacity-100"
-              onClick={() => setFolderToDelete(folder)}
-              title="폴더 삭제"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                fill="none"
-                height="16"
-                viewBox="0 0 24 24"
-                width="16"
+            <div className="folder-actions flex w-0 shrink-0 items-center overflow-hidden opacity-0 max-[800px]:w-16 max-[800px]:opacity-100">
+              <button
+                aria-label={`${folder.name} 폴더 수정`}
+                className="folder-edit-button flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--text-sub)]"
+                onClick={() => openEditModal(folder)}
+                title="폴더 수정"
+                type="button"
               >
-                <path
-                  d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                />
-              </svg>
-              <span>삭제</span>
-            </button>
+                <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+                  <path d="m4 20 4.2-1 10.6-10.6a2.1 2.1 0 0 0-3-3L5.2 16 4 20Zm10.4-13.2 3 3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                </svg>
+              </button>
+              <button
+                aria-label={`${folder.name} 폴더 삭제`}
+                className="folder-delete-button flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--text-sub)]"
+                onClick={() => setFolderToDelete(folder)}
+                title="폴더 삭제"
+                type="button"
+              >
+                <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 24 24" width="16">
+                  <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+                </svg>
+              </button>
+            </div>
           </div>
         ))}
       </nav>
+
+      {folderToEdit && (
+        <div
+          aria-labelledby="edit-folder-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setFolderToEdit(null);
+          }}
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-[420px] rounded-2xl bg-[var(--background)] p-7 shadow-[0_20px_60px_rgba(0,0,0,0.16)]"
+            onSubmit={confirmEdit}
+          >
+            <h2 className="text-2xl font-semibold leading-[1.2] tracking-[-0.3px]" id="edit-folder-title">
+              폴더 이름 수정
+            </h2>
+            <label className="mt-6 flex flex-col gap-2" htmlFor="edit-folder-name">
+              <span className="text-sm font-medium">폴더 이름</span>
+              <input
+                autoFocus
+                className="form-control-focus min-h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--background)] px-4 text-[17px] text-[var(--text)]"
+                id="edit-folder-name"
+                maxLength={30}
+                onChange={(event) => setEditedName(event.target.value)}
+                value={editedName}
+              />
+            </label>
+            <div className="mt-7 flex justify-end gap-2">
+              <button className="nav-link-hover min-h-11 rounded-[980px] px-5 text-[15px] font-medium" onClick={() => setFolderToEdit(null)} type="button">
+                취소
+              </button>
+              <button className="save-button-hover min-h-11 rounded-[980px] bg-[var(--accent)] px-5 text-[15px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30" disabled={!editedName.trim()} type="submit">
+                저장
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {folderToDelete && (
         <div
