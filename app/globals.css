@@ -35,6 +35,10 @@ select {
   font: inherit;
 }
 
+textarea {
+  font: inherit;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -53,6 +57,15 @@ a {
 .folder-delete-button,
 .danger-button-hover {
   transition: background-color 300ms ease, color 300ms ease, opacity 300ms ease, width 300ms ease;
+}
+
+.card-action-button:hover {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+
+.card-delete-button:hover {
+  color: var(--error);
 }
 
 .nav-link-hover:hover {

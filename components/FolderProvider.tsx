@@ -9,9 +9,14 @@ import {
 } from "react";
 import {
   folders as defaultFolders,
-  links as defaultLinks,
   type Bookmark,
 } from "../lib/bookmarks";
+import {
+  deleteSavedLink,
+  saveLink,
+  updateSavedLink,
+  useSavedLinks,
+} from "../lib/saved-links";
 
 type Folder = {
   id: string;
@@ -22,6 +27,8 @@ type FolderContextValue = {
   folders: Folder[];
   links: Bookmark[];
   addLink: (link: Bookmark) => void;
+  updateLink: (link: Bookmark) => void;
+  deleteLink: (id: string) => void;
   addFolder: (name: string) => void;
   updateFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => void;
@@ -30,7 +37,7 @@ type FolderContextValue = {
 const FolderContext = createContext<FolderContextValue | null>(null);
 
 export function FolderProvider({ children }: { children: ReactNode }) {
-  const [savedLinks, setSavedLinks] = useState<Bookmark[]>([]);
+  const savedLinks = useSavedLinks();
   const [customFolders, setCustomFolders] = useState<Folder[]>([]);
   const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
   const [folderNameOverrides, setFolderNameOverrides] = useState<
@@ -50,7 +57,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
 
   const links = useMemo(
     () =>
-      [...savedLinks, ...defaultLinks]
+      savedLinks
         .filter((link) => folders.some((folder) => folder.id === link.folderId))
         .map((link) => ({
           ...link,
@@ -62,7 +69,15 @@ export function FolderProvider({ children }: { children: ReactNode }) {
   );
 
   function addLink(link: Bookmark) {
-    setSavedLinks((currentLinks) => [link, ...currentLinks]);
+    saveLink(link);
+  }
+
+  function updateLink(link: Bookmark) {
+    updateSavedLink(link);
+  }
+
+  function deleteLink(id: string) {
+    deleteSavedLink(id);
   }
 
   function addFolder(name: string) {
@@ -98,7 +113,16 @@ export function FolderProvider({ children }: { children: ReactNode }) {
 
   return (
     <FolderContext.Provider
-      value={{ folders, links, addLink, addFolder, updateFolder, deleteFolder }}
+      value={{
+        folders,
+        links,
+        addLink,
+        updateLink,
+        deleteLink,
+        addFolder,
+        updateFolder,
+        deleteFolder,
+      }}
     >
       {children}
     </FolderContext.Provider>
