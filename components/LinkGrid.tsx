@@ -20,15 +20,15 @@ export default function LinkGrid({
   links: visibleLinks = links,
 }: LinkGridProps) {
   return (
-    <section className="main-section">
-      <div className="section-heading">
+    <section className="min-w-0">
+      <div className="mb-12 flex items-end justify-between gap-6 max-[520px]:items-start">
         <div>
-          <p>{eyebrow}</p>
-          <h1>{title}</h1>
+          <p className="mb-2 text-sm leading-[1.4] text-[var(--text-sub)]">{eyebrow}</p>
+          <h1 className="text-[40px] font-semibold leading-[1.1] tracking-[-0.5px] max-[520px]:text-[34px]">{title}</h1>
         </div>
-        <span>{visibleLinks.length}개</span>
+        <span className="shrink-0 pb-1 text-sm leading-[1.4] text-[var(--text-sub)]">{visibleLinks.length}개</span>
       </div>
-      <div className="link-grid">
+      <div className="grid grid-cols-2 gap-5 max-[620px]:grid-cols-1">
         {visibleLinks.map((link) => (
           <LinkCard key={link.title} {...link} />
         ))}

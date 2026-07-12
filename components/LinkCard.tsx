@@ -12,13 +12,13 @@ export default function LinkCard({
   folder,
 }: LinkCardProps) {
   return (
-    <article className="link-card">
-      <div className="link-card-header">
-        <span className="folder-badge">{folder}</span>
-        <span className="link-domain">{url}</span>
+    <article className="link-card-hover min-h-[210px] rounded-xl bg-[var(--surface)] p-6 shadow-[var(--card-shadow)]">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <span className="rounded-[980px] bg-[var(--surface-hover)] px-3 py-1 text-[13px] leading-[1.4] text-[var(--text)]">{folder}</span>
+        <span className="truncate text-[13px] leading-[1.4] text-[var(--text-sub)]">{url}</span>
       </div>
-      <h2>{title}</h2>
-      <p>{description}</p>
+      <h2 className="mb-3 text-2xl font-semibold leading-[1.2] tracking-[-0.3px]">{title}</h2>
+      <p className="text-[15px] leading-[1.5] text-[var(--text-sub)]">{description}</p>
     </article>
   );
 }
