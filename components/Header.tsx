@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AddFolderButton from "./AddFolderButton";
 
 export default function Header() {
   return (
@@ -6,9 +7,12 @@ export default function Header() {
       <Link className="text-[17px] font-semibold tracking-[-0.2px]" href="/">
         한입 링크
       </Link>
-      <Link className="primary-button-hover inline-flex min-h-8 items-center justify-center rounded-[980px] bg-[var(--accent)] px-4 text-sm font-medium text-white" href="/new">
-        + 새 링크
-      </Link>
+      <div className="flex items-center gap-1">
+        <AddFolderButton />
+        <Link className="primary-button-hover inline-flex min-h-8 items-center justify-center rounded-[980px] bg-[var(--accent)] px-4 text-sm font-medium text-white" href="/new">
+          + 새 링크
+        </Link>
+      </div>
     </header>
   );
 }

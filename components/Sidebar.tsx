@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { folders } from "../lib/bookmarks";
+import { useFolders } from "./FolderProvider";
 
 export default function Sidebar() {
+  const { folders } = useFolders();
+
   return (
     <aside className="self-start max-[800px]:overflow-x-auto">
       <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-sub)]">

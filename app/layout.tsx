@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FolderProvider } from "../components/FolderProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="flex min-h-full flex-col bg-[var(--background)] font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif] text-[var(--text)]">
-        {children}
+        <FolderProvider>{children}</FolderProvider>
       </body>
     </html>
   );
