@@ -17,16 +17,21 @@ type Folder = {
 type FolderContextValue = {
   folders: Folder[];
   addFolder: (name: string) => void;
+  deleteFolder: (id: string) => void;
 };
 
 const FolderContext = createContext<FolderContextValue | null>(null);
 
 export function FolderProvider({ children }: { children: ReactNode }) {
   const [customFolders, setCustomFolders] = useState<Folder[]>([]);
+  const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
 
   const folders = useMemo(
-    () => [...defaultFolders, ...customFolders],
-    [customFolders],
+    () =>
+      [...defaultFolders, ...customFolders].filter(
+        (folder) => !deletedFolderIds.includes(folder.id),
+      ),
+    [customFolders, deletedFolderIds],
   );
 
   function addFolder(name: string) {
@@ -43,8 +48,15 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     setCustomFolders(nextFolders);
   }
 
+  function deleteFolder(id: string) {
+    setCustomFolders((folders) =>
+      folders.filter((folder) => folder.id !== id),
+    );
+    setDeletedFolderIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  }
+
   return (
-    <FolderContext.Provider value={{ folders, addFolder }}>
+    <FolderContext.Provider value={{ folders, addFolder, deleteFolder }}>
       {children}
     </FolderContext.Provider>
   );

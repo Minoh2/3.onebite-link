@@ -35,7 +35,7 @@ export default function AddFolderButton() {
   return (
     <>
       <button
-        className="nav-link-hover min-h-8 rounded-[980px] px-4 text-sm font-medium text-[var(--accent)]"
+        className="nav-link-hover min-h-8 shrink-0 rounded-[980px] px-3 text-xs font-medium text-[var(--accent)]"
         onClick={() => setIsOpen(true)}
         type="button"
       >

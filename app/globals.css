@@ -11,6 +11,8 @@
   --divider: #e8e8ed;
   --accent: #0071e3;
   --accent-hover: #0077ed;
+  --error: #d70015;
+  --error-hover: #b80012;
   --focus-ring: rgba(0, 113, 227, 0.2);
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -45,6 +47,12 @@ a {
   transition: background-color 300ms ease, color 300ms ease, opacity 300ms ease;
 }
 
+.folder-row-hover,
+.folder-delete-button,
+.danger-button-hover {
+  transition: background-color 300ms ease, color 300ms ease, opacity 300ms ease, width 300ms ease;
+}
+
 .nav-link-hover:hover {
   background: var(--surface-hover);
   color: var(--text);
@@ -57,6 +65,25 @@ a {
 
 .link-card-hover:hover {
   background: var(--surface-hover);
+}
+
+.folder-row-hover:hover {
+  background: var(--surface-hover);
+}
+
+.folder-row-hover:hover .folder-delete-button,
+.folder-delete-button:focus-visible {
+  opacity: 1;
+  width: 58px;
+}
+
+.folder-delete-button:hover {
+  background: var(--divider);
+  color: var(--error);
+}
+
+.danger-button-hover:hover {
+  background: var(--error-hover);
 }
 
 .form-control-focus:focus {
@@ -74,6 +101,12 @@ a {
   .primary-button-hover,
   .link-card-hover,
   .save-button-hover {
+    transition: none;
+  }
+
+  .folder-row-hover,
+  .folder-delete-button,
+  .danger-button-hover {
     transition: none;
   }
 }
