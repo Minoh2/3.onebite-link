@@ -16,22 +16,30 @@ type LinkCardProps = {
 export default function LinkCard(link: LinkCardProps) {
   const { folders, updateLink, deleteLink } = useFolders();
   const [modal, setModal] = useState<"edit" | "delete" | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  function submitEdit(event: FormEvent<HTMLFormElement>) {
+  async function submitEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isEditing) return;
+
     const formData = new FormData(event.currentTarget);
     const folderId = String(formData.get("folderId"));
     const folder = folders.find((item) => item.id === folderId);
     if (!folder) return;
 
-    updateLink({
-      ...link,
-      folderId,
-      folder: folder.name,
-      title: String(formData.get("title")).trim(),
-      description: String(formData.get("description")).trim(),
-    });
-    setModal(null);
+    setIsEditing(true);
+    try {
+      const wasUpdated = await updateLink({
+        ...link,
+        folderId,
+        folder: folder.name,
+        title: String(formData.get("title")).trim(),
+        description: String(formData.get("description")).trim(),
+      });
+      if (wasUpdated) setModal(null);
+    } finally {
+      setIsEditing(false);
+    }
   }
 
   return (
@@ -57,13 +65,13 @@ export default function LinkCard(link: LinkCardProps) {
       </article>
 
       {modal === "edit" && (
-        <div aria-labelledby={`edit-link-${link.id}`} aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]" onMouseDown={(event) => event.currentTarget === event.target && setModal(null)} role="dialog">
+        <div aria-labelledby={`edit-link-${link.id}`} aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]" onMouseDown={(event) => event.currentTarget === event.target && !isEditing && setModal(null)} role="dialog">
           <form className="w-full max-w-[480px] rounded-2xl bg-[var(--background)] p-7 shadow-[0_20px_60px_rgba(0,0,0,0.16)]" onSubmit={submitEdit}>
             <h2 className="text-2xl font-semibold" id={`edit-link-${link.id}`}>링크 수정</h2>
-            <label className="mt-6 flex flex-col gap-2"><span className="text-sm font-medium">폴더</span><select className="form-control-focus min-h-12 rounded-[10px] border border-[var(--border)] bg-white px-4" defaultValue={link.folderId} name="folderId">{folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
-            <label className="mt-4 flex flex-col gap-2"><span className="text-sm font-medium">제목</span><input className="form-control-focus min-h-12 rounded-[10px] border border-[var(--border)] px-4" defaultValue={link.title} name="title" required /></label>
-            <label className="mt-4 flex flex-col gap-2"><span className="text-sm font-medium">설명</span><textarea className="form-control-focus min-h-28 resize-y rounded-[10px] border border-[var(--border)] p-4" defaultValue={link.description} name="description" required /></label>
-            <div className="mt-7 flex justify-end gap-2"><button className="nav-link-hover min-h-11 rounded-full px-5" onClick={() => setModal(null)} type="button">취소</button><button className="save-button-hover min-h-11 rounded-full bg-[var(--accent)] px-5 text-white" type="submit">저장</button></div>
+            <label className="mt-6 flex flex-col gap-2"><span className="text-sm font-medium">폴더</span><select className="form-control-focus min-h-12 rounded-[10px] border border-[var(--border)] bg-white px-4" defaultValue={link.folderId} disabled={isEditing} name="folderId">{folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
+            <label className="mt-4 flex flex-col gap-2"><span className="text-sm font-medium">제목</span><input className="form-control-focus min-h-12 rounded-[10px] border border-[var(--border)] px-4" defaultValue={link.title} disabled={isEditing} name="title" required /></label>
+            <label className="mt-4 flex flex-col gap-2"><span className="text-sm font-medium">설명</span><textarea className="form-control-focus min-h-28 resize-y rounded-[10px] border border-[var(--border)] p-4" defaultValue={link.description} disabled={isEditing} name="description" required /></label>
+            <div className="mt-7 flex justify-end gap-2"><button className="nav-link-hover min-h-11 rounded-full px-5" disabled={isEditing} onClick={() => setModal(null)} type="button">취소</button><button className="save-button-hover min-h-11 rounded-full bg-[var(--accent)] px-5 text-white disabled:cursor-wait disabled:opacity-60" disabled={isEditing} type="submit">{isEditing ? "저장 중..." : "저장"}</button></div>
           </form>
         </div>
       )}

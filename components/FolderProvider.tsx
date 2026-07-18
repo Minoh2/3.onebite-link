@@ -21,7 +21,7 @@ type FolderContextValue = {
   folders: Folder[];
   links: Bookmark[];
   addLink: (link: Bookmark) => Promise<boolean>;
-  updateLink: (link: Bookmark) => void;
+  updateLink: (link: Bookmark) => Promise<boolean>;
   deleteLink: (id: string) => void;
   addFolder: (name: string) => Promise<boolean>;
   updateFolder: (id: string, name: string) => Promise<boolean>;
@@ -171,10 +171,26 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function updateLink(link: Bookmark) {
+  async function updateLink(link: Bookmark) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("links")
+      .update({
+        title: link.title,
+        description: link.description,
+        folder_id: Number(link.folderId),
+      })
+      .eq("id", link.id);
+
+    if (error) {
+      console.error("링크를 수정하지 못했습니다.", error);
+      return false;
+    }
+
     setSavedLinks((links) =>
       links.map((item) => (item.id === link.id ? link : item)),
     );
+    return true;
   }
 
   function deleteLink(id: string) {
