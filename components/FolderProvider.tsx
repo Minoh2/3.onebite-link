@@ -31,7 +31,7 @@ type FolderContextValue = {
   deleteLink: (id: string) => void;
   addFolder: (name: string) => Promise<boolean>;
   updateFolder: (id: string, name: string) => Promise<boolean>;
-  deleteFolder: (id: string) => void;
+  deleteFolder: (id: string) => Promise<boolean>;
 };
 
 const FolderContext = createContext<FolderContextValue | null>(null);
@@ -165,11 +165,20 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     return true;
   }
 
-  function deleteFolder(id: string) {
+  async function deleteFolder(id: string) {
+    const supabase = createClient();
+    const { error } = await supabase.from("folders").delete().eq("id", id);
+
+    if (error) {
+      console.error("폴더를 삭제하지 못했습니다.", error);
+      return false;
+    }
+
     setSavedFolders((folders) =>
       folders.filter((folder) => folder.id !== id),
     );
     setDeletedFolderIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+    return true;
   }
 
   return (

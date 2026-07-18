@@ -18,17 +18,25 @@ export default function Sidebar() {
     id: string;
     name: string;
   } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  function confirmDelete() {
-    if (!folderToDelete) return;
+  async function confirmDelete() {
+    if (!folderToDelete || isDeleting) return;
 
-    deleteFolder(folderToDelete.id);
-    if (pathname === `/folder/${folderToDelete.id}`) {
-      router.push("/");
+    setIsDeleting(true);
+    try {
+      const wasDeleted = await deleteFolder(folderToDelete.id);
+      if (!wasDeleted) return;
+
+      if (pathname === `/folder/${folderToDelete.id}`) {
+        router.push("/");
+      }
+      setFolderToDelete(null);
+    } finally {
+      setIsDeleting(false);
     }
-    setFolderToDelete(null);
   }
 
   function openEditModal(folder: { id: string; name: string }) {
@@ -153,7 +161,9 @@ export default function Sidebar() {
           aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]"
           onMouseDown={(event) => {
-            if (event.currentTarget === event.target) setFolderToDelete(null);
+            if (event.currentTarget === event.target && !isDeleting) {
+              setFolderToDelete(null);
+            }
           }}
           role="alertdialog"
         >
@@ -170,6 +180,7 @@ export default function Sidebar() {
             <div className="mt-7 flex justify-end gap-2">
               <button
                 className="nav-link-hover min-h-11 rounded-[980px] px-5 text-[15px] font-medium"
+                disabled={isDeleting}
                 onClick={() => setFolderToDelete(null)}
                 type="button"
               >
@@ -177,10 +188,11 @@ export default function Sidebar() {
               </button>
               <button
                 className="danger-button-hover min-h-11 rounded-[980px] bg-[var(--error)] px-5 text-[15px] font-medium text-white"
+                disabled={isDeleting}
                 onClick={confirmDelete}
                 type="button"
               >
-                삭제
+                {isDeleting ? "삭제 중..." : "삭제"}
               </button>
             </div>
           </div>
