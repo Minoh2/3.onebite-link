@@ -10,12 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import type { Bookmark } from "../lib/bookmarks";
-import {
-  deleteSavedLink,
-  saveLink,
-  updateSavedLink,
-  useSavedLinks,
-} from "../lib/saved-links";
 import { createClient } from "../utils/supabase/client";
 
 type Folder = {
@@ -26,7 +20,7 @@ type Folder = {
 type FolderContextValue = {
   folders: Folder[];
   links: Bookmark[];
-  addLink: (link: Bookmark) => void;
+  addLink: (link: Bookmark) => Promise<boolean>;
   updateLink: (link: Bookmark) => void;
   deleteLink: (id: string) => void;
   addFolder: (name: string) => Promise<boolean>;
@@ -37,13 +31,14 @@ type FolderContextValue = {
 const FolderContext = createContext<FolderContextValue | null>(null);
 
 export function FolderProvider({ children }: { children: ReactNode }) {
-  const savedLinks = useSavedLinks();
+  const [savedLinks, setSavedLinks] = useState<Bookmark[]>([]);
   const [savedFolders, setSavedFolders] = useState<Folder[]>([]);
   const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
   const [folderNameOverrides, setFolderNameOverrides] = useState<
     Record<string, string>
   >({});
   const isAddingFolderRef = useRef(false);
+  const isAddingLinkRef = useRef(false);
 
   useEffect(() => {
     let isActive = true;
@@ -71,7 +66,39 @@ export function FolderProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    async function loadLinks() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("links")
+        .select(
+          "id, url, title, description, thumbnail_url, folder_id",
+        )
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error("링크 목록을 불러오지 못했습니다.", error);
+        return;
+      }
+
+      if (isActive) {
+        setSavedLinks(
+          data.map((link) => ({
+            id: String(link.id),
+            url: link.url,
+            title: link.title ?? link.url,
+            description: link.description ?? "",
+            thumbnail: link.thumbnail_url ?? undefined,
+            folderId:
+              link.folder_id === null ? "" : String(link.folder_id),
+            folder: "",
+          })),
+        );
+      }
+    }
+
     void loadFolders();
+    void loadLinks();
 
     return () => {
       isActive = false;
@@ -102,16 +129,56 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     [folders, savedLinks],
   );
 
-  function addLink(link: Bookmark) {
-    saveLink(link);
+  async function addLink(link: Bookmark) {
+    if (isAddingLinkRef.current) return false;
+
+    isAddingLinkRef.current = true;
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("links")
+        .insert({
+          url: link.url,
+          title: link.title,
+          description: link.description,
+          thumbnail_url: link.thumbnail ?? null,
+          folder_id: Number(link.folderId),
+        })
+        .select("id, url, title, description, thumbnail_url, folder_id")
+        .single();
+
+      if (error) {
+        console.error("링크를 추가하지 못했습니다.", error);
+        return false;
+      }
+
+      setSavedLinks((links) => [
+        {
+          id: String(data.id),
+          url: data.url,
+          title: data.title ?? data.url,
+          description: data.description ?? "",
+          thumbnail: data.thumbnail_url ?? undefined,
+          folderId: String(data.folder_id),
+          folder: link.folder,
+        },
+        ...links,
+      ]);
+      return true;
+    } finally {
+      isAddingLinkRef.current = false;
+    }
   }
 
   function updateLink(link: Bookmark) {
-    updateSavedLink(link);
+    setSavedLinks((links) =>
+      links.map((item) => (item.id === link.id ? link : item)),
+    );
   }
 
   function deleteLink(id: string) {
-    deleteSavedLink(id);
+    setSavedLinks((links) => links.filter((link) => link.id !== id));
   }
 
   async function addFolder(name: string) {

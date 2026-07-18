@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFolders } from "./FolderProvider";
 
@@ -9,9 +9,13 @@ export default function NewLinkForm() {
   const { folders, addLink } = useFolders();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const isSubmittingRef = useRef(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
     setError("");
     setIsSaving(true);
 
@@ -34,12 +38,14 @@ export default function NewLinkForm() {
         throw new Error(data.error ?? "링크 정보를 불러오지 못했습니다.");
       }
 
-      addLink({
-        id: crypto.randomUUID(),
+      const wasAdded = await addLink({
+        id: "",
         ...data,
         folderId: folder.id,
         folder: folder.name,
       });
+      if (!wasAdded) throw new Error("링크를 저장하지 못했습니다.");
+
       router.push("/");
     } catch (caughtError) {
       setError(
@@ -48,6 +54,7 @@ export default function NewLinkForm() {
           : "링크를 저장하지 못했습니다.",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSaving(false);
     }
   }
@@ -68,13 +75,14 @@ export default function NewLinkForm() {
             id="link-url"
             name="url"
             placeholder="https://example.com"
+            disabled={isSaving}
             type="url"
             required
           />
         </label>
         <label className="flex flex-col gap-2" htmlFor="folder">
           <span className="text-sm font-medium text-[var(--text)]">폴더</span>
-          <select className="form-control-focus min-h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--background)] px-4 text-[17px] text-[var(--text)] transition-[border-color,box-shadow] duration-300" id="folder" name="folder" defaultValue="">
+          <select className="form-control-focus min-h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--background)] px-4 text-[17px] text-[var(--text)] transition-[border-color,box-shadow] duration-300" disabled={isSaving} id="folder" name="folder" defaultValue="">
             <option value="" disabled>
               폴더를 선택하세요
             </option>
