@@ -7,7 +7,9 @@ export default function AddFolderButton() {
   const { addFolder } = useFolders();
   const [isOpen, setIsOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -25,11 +27,20 @@ export default function AddFolderButton() {
     setIsOpen(false);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!folderName.trim()) return;
-    addFolder(folderName);
-    closeModal();
+    if (!folderName.trim() || isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setIsSaving(true);
+
+    try {
+      const wasAdded = await addFolder(folderName);
+      if (wasAdded) closeModal();
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -69,6 +80,7 @@ export default function AddFolderButton() {
               <span className="text-sm font-medium">폴더 이름</span>
               <input
                 className="form-control-focus min-h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--background)] px-4 text-[17px] text-[var(--text)] transition-[border-color,box-shadow] duration-300"
+                disabled={isSaving}
                 id="folder-name"
                 maxLength={30}
                 onChange={(event) => setFolderName(event.target.value)}
@@ -80,6 +92,7 @@ export default function AddFolderButton() {
             <div className="mt-7 flex justify-end gap-2">
               <button
                 className="nav-link-hover min-h-11 rounded-[980px] px-5 text-[15px] font-medium text-[var(--text)]"
+                disabled={isSaving}
                 onClick={closeModal}
                 type="button"
               >
@@ -87,10 +100,10 @@ export default function AddFolderButton() {
               </button>
               <button
                 className="save-button-hover min-h-11 rounded-[980px] bg-[var(--accent)] px-5 text-[15px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30"
-                disabled={!folderName.trim()}
+                disabled={!folderName.trim() || isSaving}
                 type="submit"
               >
-                저장
+                {isSaving ? "저장 중..." : "저장"}
               </button>
             </div>
           </form>

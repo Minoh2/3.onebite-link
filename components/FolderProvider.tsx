@@ -3,20 +3,20 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import {
-  folders as defaultFolders,
-  type Bookmark,
-} from "../lib/bookmarks";
+import type { Bookmark } from "../lib/bookmarks";
 import {
   deleteSavedLink,
   saveLink,
   updateSavedLink,
   useSavedLinks,
 } from "../lib/saved-links";
+import { createClient } from "../utils/supabase/client";
 
 type Folder = {
   id: string;
@@ -29,7 +29,7 @@ type FolderContextValue = {
   addLink: (link: Bookmark) => void;
   updateLink: (link: Bookmark) => void;
   deleteLink: (id: string) => void;
-  addFolder: (name: string) => void;
+  addFolder: (name: string) => Promise<boolean>;
   updateFolder: (id: string, name: string) => void;
   deleteFolder: (id: string) => void;
 };
@@ -38,21 +38,55 @@ const FolderContext = createContext<FolderContextValue | null>(null);
 
 export function FolderProvider({ children }: { children: ReactNode }) {
   const savedLinks = useSavedLinks();
-  const [customFolders, setCustomFolders] = useState<Folder[]>([]);
+  const [savedFolders, setSavedFolders] = useState<Folder[]>([]);
   const [deletedFolderIds, setDeletedFolderIds] = useState<string[]>([]);
   const [folderNameOverrides, setFolderNameOverrides] = useState<
     Record<string, string>
   >({});
+  const isAddingFolderRef = useRef(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadFolders() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("folders")
+        .select("id, name")
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.error("폴더 목록을 불러오지 못했습니다.", error);
+        return;
+      }
+
+      if (isActive) {
+        setSavedFolders(
+          data.map((folder) => ({
+            id: String(folder.id),
+            name: folder.name,
+          })),
+        );
+      }
+    }
+
+    void loadFolders();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const folders = useMemo(
     () =>
-      [...defaultFolders, ...customFolders]
+      savedFolders
         .filter((folder) => !deletedFolderIds.includes(folder.id))
         .map((folder) => ({
           ...folder,
           name: folderNameOverrides[folder.id] ?? folder.name,
         })),
-    [customFolders, deletedFolderIds, folderNameOverrides],
+    [savedFolders, deletedFolderIds, folderNameOverrides],
   );
 
   const links = useMemo(
@@ -80,18 +114,33 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     deleteSavedLink(id);
   }
 
-  function addFolder(name: string) {
+  async function addFolder(name: string) {
     const normalizedName = name.trim();
-    if (!normalizedName) return;
+    if (!normalizedName || isAddingFolderRef.current) return false;
 
-    const baseId = normalizedName
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣]+/g, "-")
-      .replace(/^-|-$/g, "") || "folder";
-    const id = `${baseId}-${Date.now()}`;
-    const nextFolders = [...customFolders, { id, name: normalizedName }];
+    isAddingFolderRef.current = true;
 
-    setCustomFolders(nextFolders);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("folders")
+        .insert({ name: normalizedName })
+        .select("id, name")
+        .single();
+
+      if (error) {
+        console.error("폴더를 추가하지 못했습니다.", error);
+        return false;
+      }
+
+      setSavedFolders((folders) => [
+        ...folders,
+        { id: String(data.id), name: data.name },
+      ]);
+      return true;
+    } finally {
+      isAddingFolderRef.current = false;
+    }
   }
 
   function updateFolder(id: string, name: string) {
@@ -105,7 +154,7 @@ export function FolderProvider({ children }: { children: ReactNode }) {
   }
 
   function deleteFolder(id: string) {
-    setCustomFolders((folders) =>
+    setSavedFolders((folders) =>
       folders.filter((folder) => folder.id !== id),
     );
     setDeletedFolderIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
