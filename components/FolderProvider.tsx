@@ -22,7 +22,7 @@ type FolderContextValue = {
   links: Bookmark[];
   addLink: (link: Bookmark) => Promise<boolean>;
   updateLink: (link: Bookmark) => Promise<boolean>;
-  deleteLink: (id: string) => void;
+  deleteLink: (id: string) => Promise<boolean>;
   addFolder: (name: string) => Promise<boolean>;
   updateFolder: (id: string, name: string) => Promise<boolean>;
   deleteFolder: (id: string) => Promise<boolean>;
@@ -193,8 +193,17 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     return true;
   }
 
-  function deleteLink(id: string) {
+  async function deleteLink(id: string) {
+    const supabase = createClient();
+    const { error } = await supabase.from("links").delete().eq("id", id);
+
+    if (error) {
+      console.error("링크를 삭제하지 못했습니다.", error);
+      return false;
+    }
+
     setSavedLinks((links) => links.filter((link) => link.id !== id));
+    return true;
   }
 
   async function addFolder(name: string) {

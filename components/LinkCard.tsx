@@ -17,6 +17,7 @@ export default function LinkCard(link: LinkCardProps) {
   const { folders, updateLink, deleteLink } = useFolders();
   const [modal, setModal] = useState<"edit" | "delete" | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function submitEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,6 +40,18 @@ export default function LinkCard(link: LinkCardProps) {
       if (wasUpdated) setModal(null);
     } finally {
       setIsEditing(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const wasDeleted = await deleteLink(link.id);
+      if (wasDeleted) setModal(null);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -77,11 +90,11 @@ export default function LinkCard(link: LinkCardProps) {
       )}
 
       {modal === "delete" && (
-        <div aria-labelledby={`delete-link-${link.id}`} aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]" onMouseDown={(event) => event.currentTarget === event.target && setModal(null)} role="alertdialog">
+        <div aria-labelledby={`delete-link-${link.id}`} aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6 backdrop-blur-[4px]" onMouseDown={(event) => event.currentTarget === event.target && !isDeleting && setModal(null)} role="alertdialog">
           <div className="w-full max-w-[420px] rounded-2xl bg-[var(--background)] p-7 shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
             <h2 className="text-2xl font-semibold" id={`delete-link-${link.id}`}>링크를 삭제할까요?</h2>
             <p className="mt-3 text-[15px] text-[var(--text-sub)]">‘{link.title}’ 링크가 보관함에서 삭제됩니다.</p>
-            <div className="mt-7 flex justify-end gap-2"><button className="nav-link-hover min-h-11 rounded-full px-5" onClick={() => setModal(null)} type="button">취소</button><button className="danger-button-hover min-h-11 rounded-full bg-[var(--error)] px-5 text-white" onClick={() => deleteLink(link.id)} type="button">삭제</button></div>
+            <div className="mt-7 flex justify-end gap-2"><button className="nav-link-hover min-h-11 rounded-full px-5" disabled={isDeleting} onClick={() => setModal(null)} type="button">취소</button><button className="danger-button-hover min-h-11 rounded-full bg-[var(--error)] px-5 text-white disabled:cursor-wait disabled:opacity-60" disabled={isDeleting} onClick={confirmDelete} type="button">{isDeleting ? "삭제 중..." : "삭제"}</button></div>
           </div>
         </div>
       )}
