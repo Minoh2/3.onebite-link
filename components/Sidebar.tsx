@@ -13,6 +13,7 @@ export default function Sidebar() {
     name: string;
   } | null>(null);
   const [editedName, setEditedName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<{
     id: string;
     name: string;
@@ -35,12 +36,17 @@ export default function Sidebar() {
     setEditedName(folder.name);
   }
 
-  function confirmEdit(event: FormEvent<HTMLFormElement>) {
+  async function confirmEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!folderToEdit || !editedName.trim()) return;
+    if (!folderToEdit || !editedName.trim() || isEditing) return;
 
-    updateFolder(folderToEdit.id, editedName);
-    setFolderToEdit(null);
+    setIsEditing(true);
+    try {
+      const wasUpdated = await updateFolder(folderToEdit.id, editedName);
+      if (wasUpdated) setFolderToEdit(null);
+    } finally {
+      setIsEditing(false);
+    }
   }
 
   return (
@@ -122,6 +128,7 @@ export default function Sidebar() {
               <input
                 autoFocus
                 className="form-control-focus min-h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--background)] px-4 text-[17px] text-[var(--text)]"
+                disabled={isEditing}
                 id="edit-folder-name"
                 maxLength={30}
                 onChange={(event) => setEditedName(event.target.value)}
@@ -129,11 +136,11 @@ export default function Sidebar() {
               />
             </label>
             <div className="mt-7 flex justify-end gap-2">
-              <button className="nav-link-hover min-h-11 rounded-[980px] px-5 text-[15px] font-medium" onClick={() => setFolderToEdit(null)} type="button">
+              <button className="nav-link-hover min-h-11 rounded-[980px] px-5 text-[15px] font-medium" disabled={isEditing} onClick={() => setFolderToEdit(null)} type="button">
                 취소
               </button>
-              <button className="save-button-hover min-h-11 rounded-[980px] bg-[var(--accent)] px-5 text-[15px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30" disabled={!editedName.trim()} type="submit">
-                저장
+              <button className="save-button-hover min-h-11 rounded-[980px] bg-[var(--accent)] px-5 text-[15px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-30" disabled={!editedName.trim() || isEditing} type="submit">
+                {isEditing ? "저장 중..." : "저장"}
               </button>
             </div>
           </form>

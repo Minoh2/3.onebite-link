@@ -30,7 +30,7 @@ type FolderContextValue = {
   updateLink: (link: Bookmark) => void;
   deleteLink: (id: string) => void;
   addFolder: (name: string) => Promise<boolean>;
-  updateFolder: (id: string, name: string) => void;
+  updateFolder: (id: string, name: string) => Promise<boolean>;
   deleteFolder: (id: string) => void;
 };
 
@@ -143,14 +143,26 @@ export function FolderProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function updateFolder(id: string, name: string) {
+  async function updateFolder(id: string, name: string) {
     const normalizedName = name.trim();
-    if (!normalizedName) return;
+    if (!normalizedName) return false;
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("folders")
+      .update({ name: normalizedName })
+      .eq("id", id);
+
+    if (error) {
+      console.error("폴더 이름을 수정하지 못했습니다.", error);
+      return false;
+    }
 
     setFolderNameOverrides((names) => ({
       ...names,
       [id]: normalizedName,
     }));
+    return true;
   }
 
   function deleteFolder(id: string) {
