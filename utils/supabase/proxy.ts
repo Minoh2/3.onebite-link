@@ -25,7 +25,25 @@ export async function updateSession(request: NextRequest) {
   });
 
   // Reading claims refreshes an expired session and writes the new cookies.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const pathname = request.nextUrl.pathname;
+  const isProtectedRoute =
+    pathname === "/" ||
+    pathname === "/new" ||
+    pathname.startsWith("/folder/");
+
+  if (isProtectedRoute && !data?.claims) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+
+    return redirectResponse;
+  }
 
   return supabaseResponse;
 }
